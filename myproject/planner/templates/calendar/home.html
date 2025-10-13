@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Главная{% endblock %}
+
+{% block content %}
+{% if user.is_authenticated %}
+<div class="dashboard">
+  <!-- Кнопка-бургер -->
+  <button id="burger-btn" class="burger burger-lines">
+    <span></span><span></span><span></span>
+  </button>
+
+  <!-- Боковая панель -->
+  <aside class="sidebar" id="sidebar">
+    <!-- Мини-календарь -->
+    <div class="mini-calendar">
+      <div class="calendar-header">
+        <button id="prev-month" class="calendar-nav"><i data-lucide="chevron-left"></i></button>
+        <span id="mini-month">Месяц</span>
+        <button id="next-month" class="calendar-nav"><i data-lucide="chevron-right"></i></button>
+      </div>
+
+      <div class="weekdays">
+        <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
+      </div>
+
+      <div id="mini-calendar-grid"></div>
+    </div>
+
+    <!-- Цели -->
+    <div class="goals-block">
+      <button class="open-goal-modal btn">Добавить цель</button>
+
+      <div class="accordion">
+        <button class="accordion-header">Мои цели</button>
+        <div class="accordion-content{% if goals %} show{% endif %}">
+          <ul>
+            {% for goal in goals %}
+              <li class="goal-item {{ goal.status }}">
+                <span class="goal-title">{{ goal.title }}</span>
+                <div class="goal-actions">
+                  <button type="button" class="goal-action edit" data-id="{{ goal.id }}" title="Редактировать">
+                    <i data-lucide="pencil"></i>
+                  </button>
+                  <button type="button" class="goal-action danger" data-id="{{ goal.id }}" title="Удалить">
+                    <i data-lucide="trash-2"></i>
+                  </button>
+                  {% if goal.status != "completed" %}
+                  <button type="button" class="goal-action complete" data-id="{{ goal.id }}" title="Выполнить">
+                    <i data-lucide="check"></i>
+                  </button>
+                  {% endif %}
+                </div>
+              </li>
+            {% empty %}
+              <li class="no-goals">Целей пока нет</li>
+            {% endfor %}
+          </ul>
+          <a href="{% url 'planner:goals_list' %}" class="btn-small">Все цели</a>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Основной календарь -->
+  <main class="main-calendar">
+    <div id="main-calendar"></div>
+  </main>
+</div>
+
+<!-- Универсальная модалка (и для создания, и для редактирования) -->
+<div id="goalModal" class="modal hidden">
+  <div class="modal-content">
+    <span class="close" id="closeGoalModal">&times;</span>
+    <h2>Новая цель</h2>
+    <form id="goalForm" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="goal_id" id="goalId">
+
+      <div class="form-group">
+        <label for="goalTitle">Заголовок:</label>
+        <input type="text" name="title" id="goalTitle" required>
+      </div>
+
+      <div class="form-group">
+        <label for="goalDescription">Описание:</label>
+        <textarea name="description" id="goalDescription"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="goalDate">Дата:</label>
+        <input type="date" name="date" id="goalDate" required>
+      </div>
+
+      <div class="form-group">
+        <label for="goalTime">Время:</label>
+        <input type="time" name="time" id="goalTime" required>
+      </div>
+
+      <!-- Селект один. JS сам добавляет/убирает "Выполнена". -->
+      <div class="form-group">
+        <label for="goalStatus">Статус:</label>
+        <select name="status" id="goalStatus">
+          <option value="default">Обычная</option>
+          <option value="important">Важная</option>
+        </select>
+      </div>
+
+      <div class="modal-actions">
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        <button type="button" id="deleteGoalBtn" class="btn btn-danger" style="display:none;">Удалить</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Модалка подтверждения удаления -->
+<div id="deleteModal" class="modal hidden">
+  <div class="modal-content">
+    <h2>Удалить цель?</h2>
+    <p>Вы уверены, что хотите удалить эту цель?</p>
+    <div class="modal-actions">
+      <button id="confirmDelete" class="btn btn-danger">Удалить</button>
+      <button id="cancelDelete" class="btn btn-secondary">Отмена</button>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<div class="welcome text-center mb-6">
+  <h2>Добро пожаловать в Онлайн-Календарь</h2>
+  <p>Ставь цели, выполняй задачи и зарабатывай очки!</p>
+  <div class="buttons mt-4">
+    <a href="{% url 'users:login' %}" class="btn">Войти</a>
+    <a href="{% url 'users:register' %}" class="btn btn-alt">Регистрация</a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/mini_calendar.js' %}"></script>
+<script src="{% static 'js/burger.js' %}"></script>
+<script src="{% static 'js/header_size.js' %}"></script>
+<script src="{% static 'js/fullcalendar_init.js' %}"></script>
+<script src="{% static 'js/accordion.js' %}"></script>
+
+<script>
+  window.goalUrls = {
+    add: "{% url 'planner:add_goal' %}",
+    editPattern: "{% url 'planner:edit_goal' 0 %}",
+    deletePattern: "{% url 'planner:delete_goal' 0 %}",
+    api: "{% url 'planner:goals_api' %}"
+  };
+</script>
+
+<script src="{% static 'js/goal_modal.js' %}"></script>
+<script src="{% static 'js/toast.js' %}"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => { if (window.lucide) lucide.createIcons(); });
+</script>
+{% endblock %}

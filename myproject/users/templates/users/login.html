@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Вход{% endblock %}
+{% block content %}
+<div class="form-container">
+    <h2>Вход в аккаунт</h2>
+
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>
+                    {{ message }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="field">
+            <label for="id_username">Имя пользователя:</label>
+            <input type="text" name="username" id="id_username" required>
+        </div>
+
+        <div class="field">
+            <label for="id_password">Пароль:</label>
+            <div class="password-wrapper">
+                <input type="password" name="password" id="id_password" required>
+                <button type="button" class="toggle-password">
+                    <i data-lucide="eye"></i>
+                </button>
+            </div>
+        </div>
+
+        <button type="submit" class="btn">Войти</button>
+    </form>
+</div>
+{% endblock %}

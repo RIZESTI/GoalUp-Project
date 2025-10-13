@@ -1,0 +1,159 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}GoalUp{% endblock %}</title>
+
+    <!-- ========== Стили ========== -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style_mobile.css' %}">
+
+    <!-- Cropper.js (обрезка аватаров) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+    <!-- FullCalendar -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+
+    <!-- Иконка сайта -->
+    <link rel="icon" type="image/x-icon" href="{% static 'img/favicon.ico' %}">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body>
+    <!-- ========== Шапка ========== -->
+    <header>
+        <div class="header-left">
+            <h1><a href="{% url 'welcome' %}">GoalUp</a></h1>
+        </div>
+
+        <div class="header-right">
+            <!-- Мобильная кнопка -->
+            <button class="mobile-menu-btn" id="mobileMenuToggle">☰</button>
+
+            <!-- Выпадающее меню -->
+            <div class="mobile-actions" id="mobileActionsMenu">
+              <a href="#" class="open-goal-modal">Добавить цель</a>
+              <a href="{% url 'planner:goals_list' %}">Мои цели</a>
+              <a href="{% url 'planner:home' %}">Календарь</a>
+            </div>
+
+            {% if user.is_authenticated %}
+            <div class="header-actions capsule">
+              <a href="#" class="open-goal-modal capsule-btn">Добавить цель</a>
+              <a href="{% url 'planner:goals_list' %}" class="capsule-btn">Мои цели</a>
+              <a href="{% url 'planner:home' %}" class="capsule-btn">Календарь</a>
+            </div>
+
+            <a href="{% url 'users:profile' %}" class="user-info-link">
+                {% if user.userprofile.avatar %}
+                    <img src="{{ user.userprofile.avatar.url }}" alt="" class="avatar-small">
+                {% else %}
+                    <img src="{% static 'img/default-avatar.png' %}" alt="" class="avatar-small">
+                {% endif %}
+                <span class="username">{{ user.username }}</span>
+            </a>
+            <a href="{% url 'users:logout' %}" class="btn-nav">Выйти</a>
+
+            {% else %}
+                <a href="{% url 'users:login' %}" class="btn-nav">Вход</a>
+                <a href="{% url 'users:register' %}" class="btn-nav">Регистрация</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- ========== Сообщения Django ========== -->
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+                {{ message }}
+                <span class="close-btn" onclick="this.parentElement.style.display='none';">×</span>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ========== Основной контент ========== -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ========== Футер ========== -->
+    <footer class="site-footer">
+      <div class="footer-container">
+        <div class="footer-col about">
+          <h2>GOALUP</h2>
+          <p>Онлайн календарь для постановки и планирования целей.</p>
+          <p class="rights">© 2025 Все права защищены.<br>
+          Обладатель прав — <strong>Потуданский Кирилл</strong></p>
+        </div>
+
+        <div class="footer-col contacts">
+          <h3>КОНТАКТЫ</h3>
+          <ul>
+            <li><a href="https://wa.me/77059646588" target="_blank">WhatsApp: написать</a></li>
+            <li class="time">Отвечаю с пн по пт с 10:00 до 22:00</li>
+          </ul>
+        </div>
+
+        <div class="footer-col nav">
+          <h3>НАВИГАЦИЯ</h3>
+          <ul>
+            <li><a href="/">Главная</a></li>
+            <li><a href="{% url 'planner:home' %}">Календарь</a></li>
+            <li><a href="{% url 'planner:goals_list' %}">Мои цели</a></li>
+            <li><a href="{% url 'users:profile' %}">Профиль</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        Казахстан, 2025
+      </div>
+    </footer>
+
+    <!-- Контейнер для Toast-уведомлений -->
+    <div id="toast-container"></div>
+
+    <!-- ========== Скрипты ========== -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="{% static 'js/password_toggle.js' %}"></script>
+    <script src="{% static 'js/toast.js' %}"></script>
+
+    <!-- 🔑 ВАЖНО: ссылка на главную для fallback -->
+    <script>
+        window.GOALUP_HOME_URL = "{% url 'planner:home' %}";
+    </script>
+
+    <script src="{% static 'js/goal_modal.js' %}"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            if (window.lucide) lucide.createIcons();
+
+            const toggle = document.getElementById("mobileMenuToggle");
+            const menu = document.getElementById("mobileActionsMenu");
+
+            if (toggle && menu) {
+                toggle.addEventListener("click", () => {
+                    menu.classList.toggle("show");
+                });
+                document.addEventListener("click", (e) => {
+                    if (!menu.contains(e.target) && !toggle.contains(e.target)) {
+                        menu.classList.remove("show");
+                    }
+                });
+            }
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+
+    <div id="loader-overlay">
+        <div class="spinner"></div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Мои цели{% endblock %}
+
+{% block content %}
+{% if user.is_authenticated %}
+<div class="goals-page form-container" style="max-width:1000px;">
+  <h2 style="color:#4a148c; margin-top:0;">Мои цели</h2>
+
+  <!-- 🔍 Фильтры -->
+  <div class="filter-toggle-wrapper">
+    <button id="toggleFilters" class="btn" style="width:auto;">Фильтры</button>
+  </div>
+
+  <form id="goalsFilter" class="goals-filter collapsed" onsubmit="return false;">
+    <div class="filter-inner">
+      <input type="text" id="filter_q" name="q" placeholder="Поиск..." style="flex:1; min-width:150px;">
+
+      <!-- Выпадающий список статусов -->
+      <select id="filter_status" name="status" class="status-select">
+        <option value="">Все</option>
+        <option value="default">Обычные</option>
+        <option value="important">Важные</option>
+        <option value="completed">Выполненные</option>
+      </select>
+
+      <!-- Даты с подписями -->
+      <div class="filter-dates">
+        <label>
+          <span>от</span>
+          <input type="date" id="filter_from" name="from">
+        </label>
+        <label>
+          <span>до</span>
+          <input type="date" id="filter_to" name="to">
+        </label>
+      </div>
+
+      <div class="filter-buttons">
+        <button id="applyFilters" class="btn">Применить</button>
+        <button id="resetFilters" type="button" class="btn btn-alt">Сброс</button>
+      </div>
+    </div>
+  </form>
+
+  <!-- 🔘 Кнопки управления -->
+  <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
+    <button class="open-goal-modal btn">Добавить цель</button>
+    <a href="{% url 'planner:home' %}" class="btn btn-alt">Календарь</a>
+  </div>
+
+  <!-- 📋 Таблица целей -->
+  <div id="goalsContainer">
+    {% if goals %}
+    <table class="goals-table" style="width:100%; border-collapse:collapse;">
+      <thead>
+        <tr style="background:#f7f5fb;">
+          <th>Заголовок</th>
+          <th>Описание</th>
+          <th>Дата</th>
+          <th>Действия</th>
+        </tr>
+      </thead>
+      <tbody id="goalsTableBody">
+        {% for g in goals %}
+        <tr class="goal-row {{ g.status }}">
+          <td>{{ g.title }}</td>
+          <td>{{ g.description|default:"—" }}</td>
+          <td data-time="{{ g.datetime|date:'H:i' }}">{{ g.datetime|date:'d.m.Y' }}</td>
+          <td>
+            <div class="goal-actions">
+              <button type="button" class="goal-action edit" data-id="{{ g.id }}" title="Редактировать">
+                <i data-lucide="pencil"></i>
+              </button>
+              <button type="button" class="goal-action danger" data-id="{{ g.id }}" title="Удалить">
+                <i data-lucide="trash-2"></i>
+              </button>
+              {% if g.status != "completed" %}
+              <button type="button" class="goal-action complete" data-id="{{ g.id }}" title="Выполнить">
+                <i data-lucide="check"></i>
+              </button>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p>Пока целей нет. Нажми «Добавить цель».</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ================= МОДАЛКА: ДОБАВЛЕНИЕ / РЕДАКТИРОВАНИЕ ================= -->
+<div id="goalModal" class="modal hidden">
+  <div class="modal-content">
+    <span class="close" id="closeGoalModal">&times;</span>
+    <h2>Новая цель</h2>
+    <form id="goalForm" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="goal_id" id="goalId">
+
+      <div class="form-group">
+        <label for="goalTitle">Заголовок:</label>
+        <input type="text" name="title" id="goalTitle" required>
+      </div>
+
+      <div class="form-group">
+        <label for="goalDescription">Описание:</label>
+        <textarea name="description" id="goalDescription"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="goalDate">Дата:</label>
+        <input type="date" name="date" id="goalDate" required>
+      </div>
+
+      <div class="form-group">
+        <label for="goalTime">Время:</label>
+        <input type="time" name="time" id="goalTime" required>
+      </div>
+
+      <div class="form-group">
+        <label for="goalStatus">Статус:</label>
+        <select name="status" id="goalStatus">
+          <option value="default">Обычная</option>
+          <option value="important">Важная</option>
+        </select>
+      </div>
+
+      <div class="modal-actions">
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        <button type="button" id="deleteGoalBtn" class="btn btn-danger" style="display:none;">Удалить</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= МОДАЛКА: УДАЛЕНИЕ ================= -->
+<div id="deleteModal" class="modal hidden">
+  <div class="modal-content">
+    <h2>Удалить цель?</h2>
+    <p>Вы уверены, что хотите удалить эту цель?</p>
+    <div class="modal-actions">
+      <button id="confirmDelete" class="btn btn-danger">Удалить</button>
+      <button id="cancelDelete" class="btn btn-secondary">Отмена</button>
+    </div>
+  </div>
+</div>
+
+{% else %}
+  <div class="welcome">Войдите, чтобы увидеть цели.</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  window.goalUrls = {
+    add: "{% url 'planner:add_goal' %}",
+    editPattern: "{% url 'planner:edit_goal' 0 %}",
+    deletePattern: "{% url 'planner:delete_goal' 0 %}",
+    api: "{% url 'planner:goals_api' %}"
+  };
+</script>
+
+<script src="{% static 'js/goal_modal.js' %}"></script>
+<script src="{% static 'js/toast.js' %}"></script>
+
+<!-- 🔧 JS для фильтров -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('goalsFilter');
+  const tableBody = document.getElementById('goalsTableBody');
+
+  // 🔒 Безопасное экранирование HTML
+  const escapeHTML = (text) => {
+    if (!text) return '';
+    return text.replace(/[&<>"']/g, m => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m]));
+  };
+
+  async function loadFilteredGoals() {
+    const params = new URLSearchParams(new FormData(form));
+    const res = await fetch(`/goals/?${params.toString()}`, {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+
+    if (!res.ok) {
+      console.error("Ошибка при загрузке фильтра");
+      return;
+    }
+
+    const data = await res.json();
+    tableBody.innerHTML = '';
+
+    if (!data.length) {
+      tableBody.innerHTML = '<tr><td colspan="4">Ничего не найдено</td></tr>';
+      return;
+    }
+
+    data.forEach(g => {
+      const title = escapeHTML(g.title || '—');
+      const description = g.description && g.description.trim() !== ''
+        ? escapeHTML(g.description)
+        : '—';
+      const dateStr = g.datetime ? new Date(g.datetime).toLocaleDateString('ru-RU') : '';
+
+      const row = document.createElement('tr');
+      row.className = `goal-row ${g.status}`;
+      row.innerHTML = `
+        <td>${title}</td>
+        <td>${description}</td>
+        <td>${dateStr}</td>
+        <td>
+          <div class="goal-actions">
+            <button type="button" class="goal-action edit" data-id="${g.id}" title="Редактировать">
+              <i data-lucide="pencil"></i>
+            </button>
+            <button type="button" class="goal-action danger" data-id="${g.id}" title="Удалить">
+              <i data-lucide="trash-2"></i>
+            </button>
+            ${g.status !== 'completed' ? `
+              <button type="button" class="goal-action complete" data-id="${g.id}" title="Выполнить">
+                <i data-lucide="check"></i>
+              </button>` : ''}
+          </div>
+        </td>
+      `;
+      tableBody.appendChild(row);
+    });
+
+    if (window.lucide) lucide.createIcons();
+  }
+
+  // ===== Обработчики кнопок =====
+  document.getElementById('applyFilters').addEventListener('click', loadFilteredGoals);
+  document.getElementById('resetFilters').addEventListener('click', () => {
+    form.reset();
+    loadFilteredGoals();
+  });
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  if (window.lucide) lucide.createIcons();
+
+  const toggleBtn = document.getElementById("toggleFilters");
+  const filterForm = document.getElementById("goalsFilter");
+
+  if (toggleBtn && filterForm) {
+    toggleBtn.addEventListener("click", () => {
+      filterForm.classList.toggle("collapsed");
+    });
+  }
+});
+</script>
+{% endblock %}

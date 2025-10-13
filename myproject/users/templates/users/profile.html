@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Профиль{% endblock %}
+{% block content %}
+
+<div class="profile-container">
+    <h2 class="page-title">Профиль</h2>
+
+    <div class="profile-card">
+        <!-- Аватар -->
+        <div class="profile-avatar">
+            {% if request.user.userprofile.avatar %}
+                <img src="{{ request.user.userprofile.avatar.url }}" alt="">
+            {% else %}
+                <img src="{% static 'img/default-avatar.png' %}" alt="">
+            {% endif %}
+        </div>
+
+        <!-- Информация -->
+        <div class="profile-info">
+            <p><strong>Имя пользователя:</strong> {{ request.user.username }}</p>
+            
+            <p><strong>О себе:</strong> 
+                {% if request.user.userprofile.bio %}
+                    {{ request.user.userprofile.bio }}
+                {% else %}
+                    Пока пусто...
+                {% endif %}
+            </p>
+
+            <p><strong>Дата рождения:</strong>
+                {% if request.user.userprofile.birth_date %}
+                    {{ request.user.userprofile.birth_date|date:"d.m.Y" }}
+                {% else %}
+                    Не указана
+                {% endif %}
+            </p>
+        </div>
+    </div>
+
+    <!-- Кнопки -->
+    <div class="profile-actions">
+        <a href="{% url 'users:edit_profile' %}" class="btn">Редактировать</a>
+        <a href="{% url 'users:password_change' %}" class="btn">Сменить пароль</a>
+        <a href="{% url 'users:logout' %}" class="btn btn-alt">Выйти</a>
+    </div>
+</div>
+{% endblock %}

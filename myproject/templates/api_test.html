@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Тест API GoalUp</title>
+<style>
+  body {
+    font-family: "JetBrains Mono", monospace;
+    background: #1a1a2e;
+    color: #eee;
+    padding: 20px;
+  }
+  h1 { color: #ffd700; }
+  input, select {
+    padding: 8px 10px;
+    font-size: 15px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    background: #fff;
+    color: #000;
+    margin-right: 8px;
+  }
+  input { width: 220px; }
+  #idInput { width: 100px; text-align: center; }
+  button {
+    padding: 8px 16px;
+    background: #4a148c;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+  }
+  button:hover { background: #6a1b9a; }
+  pre {
+    background: #111;
+    padding: 16px;
+    border-radius: 10px;
+    color: #0f0;
+    margin-top: 20px;
+    overflow-x: auto;
+  }
+  .admin { color: #ff5050; font-weight: 700; }
+</style>
+</head>
+<body>
+  <h1>🚀 Тест API GoalUp</h1>
+  <p>Введи API-ключ, выбери запрос и (при необходимости) ID:</p>
+
+  <div style="margin-bottom:10px;">
+    <input id="apiKey" placeholder="Вставь сюда свой X-API-KEY">
+    <select id="endpoint">
+      <option value="goals/">Список целей</option>
+      <option value="goal_id">Цель по ID</option>
+      <option value="user_id">Пользователь по ID</option>
+      <option disabled>──────────────</option>
+      <option value="all_goals/" class="admin">Все цели (админ)</option>
+      <option value="all_users/" class="admin">Все пользователи (админ)</option>
+    </select>
+    <input id="idInput" placeholder="ID">
+    <button onclick="sendRequest()">Отправить</button>
+  </div>
+
+  <pre id="output">{}</pre>
+
+<script>
+async function sendRequest() {
+  const key = document.getElementById("apiKey").value.trim();
+  const endpointChoice = document.getElementById("endpoint").value;
+  const id = document.getElementById("idInput").value.trim();
+  const output = document.getElementById("output");
+
+  if (!key) return alert("Введи API-ключ!");
+
+  let endpoint;
+  if (endpointChoice === "goal_id") {
+    if (!id) return alert("Введи ID цели");
+    endpoint = `goals/${id}/`;
+  } else if (endpointChoice === "user_id") {
+    if (!id) return alert("Введи ID пользователя");
+    endpoint = `users/${id}/`;
+  } else {
+    endpoint = endpointChoice;
+  }
+
+  const url = `/api/${endpoint}`;
+  output.textContent = "⏳ Выполняется запрос...\n" + url;
+
+  try {
+    const start = performance.now();
+    const res = await fetch(url, { headers: { "X-API-KEY": key } });
+    const time = (performance.now() - start).toFixed(1);
+    const text = await res.text();
+
+    let formatted;
+    try {
+      formatted = JSON.stringify(JSON.parse(text), null, 2);
+    } catch {
+      formatted = text;
+    }
+
+    output.textContent = `URL: ${url}\nHTTP ${res.status} (${time} ms)\n\n${formatted}`;
+  } catch (err) {
+    output.textContent = "❌ Ошибка запроса: " + err;
+  }
+}
+</script>
+</body>
+</html>

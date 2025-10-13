@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Главная - GoalUp{% endblock %}
+
+{% block content %}
+    {% if user.is_authenticated %}
+        <div class="welcome">
+            <h2>Привет, {{ user.username }} </h2>
+            <p>Ты уже в системе — можешь переходить в свой личный кабинет!</p>
+            <div class="buttons">
+                <a href="{% url 'users:profile' %}" class="btn">Мой профиль</a>
+                <a href="{% url 'users:logout' %}" class="btn btn-alt">Выйти</a>
+            </div>
+        </div>
+    {% else %}
+        <div class="welcome">
+            <h2>Добро пожаловать в Онлайн-Календарь 🎯</h2>
+            <p>Ставь цели, выполняй задачи и зарабатывай очки!</p>
+            <div class="buttons">
+                <a href="{% url 'users:login' %}" class="btn">Войти</a>
+                <a href="{% url 'users:register' %}" class="btn btn-alt">Регистрация</a>
+            </div>
+        </div>
+
+        {% if show_register_popup %}
+            <div id="registerModal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2>Привет 👋</h2>
+                    <p>Ты у нас впервые! 🎉 Зарегистрируйся, чтобы участвовать в соревнованиях:</p>
+                    <a href="{% url 'users:register' %}" class="btn btn-alt">Зарегистрироваться</a>
+                </div>
+            </div>
+
+            <script>
+                var modal = document.getElementById("registerModal");
+                var closeBtn = document.getElementsByClassName("close")[0];
+
+                modal.style.display = "block";
+
+                closeBtn.onclick = function() {
+                    modal.style.display = "none";
+                }
+
+                window.onclick = function(event) {
+                    if (event.target == modal) {
+                        modal.style.display = "none";
+                    }
+                }
+            </script>
+        {% endif %}
+    {% endif %}
+{% endblock %}

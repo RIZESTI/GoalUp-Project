@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Редактировать профиль{% endblock %}
+{% block content %}
+<div class="profile-edit-grid">
+    <h2 class="page-title">Редактировать профиль</h2>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="peg-layout">
+            <!-- Левая карточка -->
+            <section class="card left">
+                <div class="field">
+                    <label for="id_username">Имя пользователя</label>
+                    {{ user_form.username }}
+                </div>
+
+                <div class="avatar-block">
+                    <label>Фото</label>
+
+                    <div class="avatar-preview" id="avatarPreviewBlock">
+                        <img id="avatarPreview"
+                             src="{% if request.user.userprofile.avatar %}{{ request.user.userprofile.avatar.url }}{% else %}{% static 'img/default-avatar.png' %}{% endif %}"
+                             alt="">
+                    </div>
+
+                    <!-- скрытые поля -->
+                    <input type="file" id="id_avatar" name="avatar" accept="image/*" hidden>
+                    <input type="hidden" name="remove_avatar" id="remove_avatar" value="0">
+
+                    <div class="avatar-actions">
+                        <label for="id_avatar" class="btn">Изменить фото</label>
+                        <button type="button" class="btn btn-alt"
+                                onclick="document.getElementById('remove_avatar').value='1';
+                                         document.getElementById('id_avatar').value=null;
+                                         document.getElementById('avatarPreview').src='{% static 'img/default-avatar.png' %}';">
+                            Удалить фото
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Центральная карточка -->
+            <section class="card center">
+                <h3 class="card-title">О себе</h3>
+                <div class="field">
+                    {{ profile_form.bio }}
+                </div>
+            </section>
+
+            <!-- Правая карточка -->
+            <section class="card right">
+                <h3 class="card-title">Дата рождения</h3>
+                <div class="field dob-selects">
+                    {{ profile_form.birth_date }}
+                </div>
+            </section>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn">Сохранить</button>
+            <a href="{% url 'users:profile' %}" class="btn btn-secondary">Отмена</a>
+        </div>
+    </form>
+</div>
+
+<!-- Модалка для кропа -->
+<div id="cropperModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>Обрезка аватара</h3>
+    <div class="modal-image-wrapper">
+      <img id="cropperImage" alt="">
+    </div>
+    <div style="margin-top:14px; display:flex; gap:10px; justify-content:center;">
+      <button type="button" class="btn" id="cropConfirm">Сохранить</button>
+      <button type="button" class="btn btn-alt" id="cropCancel">Отмена</button>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script src="{% static 'js/avatar_crop.js' %}"></script>
+{% endblock %}
+{% endblock %}
