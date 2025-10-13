@@ -2,17 +2,20 @@ document.addEventListener('DOMContentLoaded', function() {
   const calendarEl = document.getElementById('main-calendar');
   if (!calendarEl) return;
 
-  // === tooltip (на будущее, если решим добавить всплывашки) ===
+  // === tooltip (на будущее) ===
   const tooltip = document.createElement("div");
   tooltip.className = "holiday-tooltip";
   document.body.appendChild(tooltip);
+
+  // 🧩 защита от двойного открытия модалки
+  let isCreatingGoal = false;
 
   // === инициализация календаря ===
   const calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: 'dayGridMonth',
     selectable: true,
     locale: 'ru',
-    firstDay: 1, // неделя начинается с понедельника
+    firstDay: 1,
 
     headerToolbar: {
       left: 'prev,next today',
@@ -27,14 +30,13 @@ document.addEventListener('DOMContentLoaded', function() {
       day: 'День'
     },
 
-    // === формат времени (для месячного вида) ===
     eventTimeFormat: { 
       hour: '2-digit',
       minute: '2-digit',
       hour12: false
     },
 
-    // === подгружаем события с API ===
+    // === загрузка событий ===
     events: function(fetchInfo, successCallback, failureCallback) {
       fetch("/api/goals/")
         .then(response => response.json())
@@ -43,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
             id: goal.id,
             title: goal.title,
             description: goal.description,
-            start: goal.datetime,      // поле даты из API
+            start: goal.datetime,
             className: goal.status || "default"
           }));
           successCallback(events);
@@ -51,12 +53,8 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => failureCallback(error));
     },
 
-    // === кастомный контент событий ===
     eventContent: function(arg) {
-      // Определяем текущий вид (месяц / неделя / день)
       const viewType = arg.view.type;
-
-      // Для "Месяц" показываем время и название
       if (viewType === "dayGridMonth") {
         return {
           html: `
@@ -67,24 +65,32 @@ document.addEventListener('DOMContentLoaded', function() {
           `
         };
       }
-
-      // Для "Неделя" и "День" — только название цели
       return {
         html: `<div class="fc-event-title-custom">${arg.event.title}</div>`
       };
     },
 
-    // === клики по дате и событиям ===
+    // === клики по дате и диапазону ===
     dateClick: function(info) {
+      if (isCreatingGoal) return; // 🚫 предотвращает дубль
+      isCreatingGoal = true;
+
       if (typeof openGoalModalWithDate === "function") {
         openGoalModalWithDate(info.dateStr + "T09:00:00");
       }
+
+      setTimeout(() => isCreatingGoal = false, 1000);
     },
 
     select: function(info) {
+      if (isCreatingGoal) return; // 🚫 предотвращает дубль
+      isCreatingGoal = true;
+
       if (typeof openGoalModalWithDate === "function") {
         openGoalModalWithDate(info.startStr);
       }
+
+      setTimeout(() => isCreatingGoal = false, 1000);
     },
 
     eventClick: function(info) {
@@ -100,7 +106,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // === рендерим календарь ===
   calendar.render();
   window.calendar = calendar;
 });
