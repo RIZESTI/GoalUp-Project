@@ -54,7 +54,7 @@ def goals_list(request):
             {
                 "id": g.id,
                 "title": g.title,
-                "description": g.description or "",  # ✅ ДОБАВИЛИ описание
+                "description": g.description or "",
                 "status": g.status,
                 "datetime": g.datetime.isoformat() if g.datetime else None,
             }
@@ -88,6 +88,17 @@ def add_goal(request):
         except ValueError:
             return JsonResponse({"status": "error", "message": "Неверный формат даты/времени"}, status=400)
 
+        # ✅ Проверка: если цель с тем же названием и временем уже есть — не дублировать
+        duplicate = Goal.objects.filter(
+            user=request.user,
+            title=title,
+            datetime=dt
+        ).exists()
+
+        if duplicate:
+            return JsonResponse({"status": "duplicate", "message": "Такая цель уже существует"})
+
+        # Создание новой цели
         goal = Goal.objects.create(
             user=request.user,
             title=title,
