@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
       isCreatingGoal = true;
 
       if (typeof openGoalModalWithDate === "function") {
-        openGoalModalWithDate(info.startStr);
+        openGoalModalWithDate(info.dateStr + "T09:00:00");
       }
 
       setTimeout(() => isCreatingGoal = false, 1000);
