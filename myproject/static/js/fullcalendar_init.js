@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .catch(error => failureCallback(error));
     },
 
+    // === как отображать события ===
     eventContent: function(arg) {
       const viewType = arg.view.type;
       if (viewType === "dayGridMonth") {
@@ -71,32 +72,52 @@ document.addEventListener('DOMContentLoaded', function() {
     },
 
     // === клики по дате и диапазону ===
-dateClick: function(info) {
-  if (isCreatingGoal) return; // 🚫 предотвращает дубль
-  isCreatingGoal = true;
+    dateClick: function(info) {
+      if (isCreatingGoal) return;
+      isCreatingGoal = true;
 
-  if (typeof openGoalModalWithDate === "function") {
-    // ✅ формируем гарантированно корректную ISO-дату
-    const iso = new Date(info.dateStr + "T09:00:00").toISOString();
-    openGoalModalWithDate(iso);
-  }
+      if (typeof openGoalModalWithDate === "function") {
+        let clickedDate = info.dateStr;
 
-  setTimeout(() => isCreatingGoal = false, 1000);
-},
+        // Если дата без времени — добавим 09:00
+        if (!clickedDate.includes("T")) {
+          clickedDate += "T09:00:00";
+        }
 
-select: function(info) {
-  if (isCreatingGoal) return; // 🚫 предотвращает дубль
-  isCreatingGoal = true;
+        const parsed = new Date(clickedDate);
+        if (!isNaN(parsed)) {
+          openGoalModalWithDate(parsed.toISOString());
+        } else {
+          console.error("⛔ Invalid date format:", clickedDate);
+        }
+      }
 
-  if (typeof openGoalModalWithDate === "function") {
-    // ✅ если startStr отсутствует, используем info.start
-    const iso = new Date(info.startStr || info.start).toISOString();
-    openGoalModalWithDate(iso);
-  }
+      setTimeout(() => isCreatingGoal = false, 800);
+    },
 
-  setTimeout(() => isCreatingGoal = false, 1000);
-},
+    select: function(info) {
+      if (isCreatingGoal) return;
+      isCreatingGoal = true;
 
+      if (typeof openGoalModalWithDate === "function") {
+        let selectedDate = info.startStr || info.start;
+
+        if (typeof selectedDate === "string" && !selectedDate.includes("T")) {
+          selectedDate += "T09:00:00";
+        }
+
+        const parsed = new Date(selectedDate);
+        if (!isNaN(parsed)) {
+          openGoalModalWithDate(parsed.toISOString());
+        } else {
+          console.error("⛔ Invalid select date:", selectedDate);
+        }
+      }
+
+      setTimeout(() => isCreatingGoal = false, 800);
+    },
+
+    // === клик по событию ===
     eventClick: function(info) {
       if (typeof openGoalModalForEdit === "function") {
         openGoalModalForEdit({
@@ -110,6 +131,7 @@ select: function(info) {
     }
   });
 
+  // === рендер календаря ===
   calendar.render();
   window.calendar = calendar;
 });
