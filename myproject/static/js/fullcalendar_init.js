@@ -71,51 +71,57 @@ document.addEventListener('DOMContentLoaded', function() {
       };
     },
 
-    // === клики по дате и диапазону ===
-    dateClick: function(info) {
-      if (isCreatingGoal) return;
-      isCreatingGoal = true;
+// === клики по дате и диапазону ===
+dateClick: function(info) {
+  if (isCreatingGoal) return;
+  isCreatingGoal = true;
 
-      if (typeof openGoalModalWithDate === "function") {
-        let clickedDate = info.dateStr;
+  if (typeof openGoalModalWithDate === "function") {
+    let clickedDate;
 
-        // Если дата без времени — добавим 09:00
-        if (!clickedDate.includes("T")) {
-          clickedDate += "T09:00:00";
-        }
+    // 🧠 На ПК FullCalendar отдаёт info.date (Date), а на мобилке info.dateStr (string)
+    if (info.date instanceof Date) {
+      clickedDate = info.date.toISOString();
+    } else if (typeof info.dateStr === "string") {
+      clickedDate = info.dateStr.includes("T")
+        ? info.dateStr
+        : info.dateStr + "T09:00:00";
+    }
 
-        const parsed = new Date(clickedDate);
-        if (!isNaN(parsed)) {
-          openGoalModalWithDate(parsed.toISOString());
-        } else {
-          console.error("⛔ Invalid date format:", clickedDate);
-        }
-      }
+    if (clickedDate) {
+      openGoalModalWithDate(clickedDate);
+    } else {
+      console.error("⚠️ Не удалось определить дату:", info);
+    }
+  }
 
-      setTimeout(() => isCreatingGoal = false, 800);
-    },
+  setTimeout(() => isCreatingGoal = false, 800);
+},
 
-    select: function(info) {
-      if (isCreatingGoal) return;
-      isCreatingGoal = true;
+select: function(info) {
+  if (isCreatingGoal) return;
+  isCreatingGoal = true;
 
-      if (typeof openGoalModalWithDate === "function") {
-        let selectedDate = info.startStr || info.start;
+  if (typeof openGoalModalWithDate === "function") {
+    let selectedDate;
 
-        if (typeof selectedDate === "string" && !selectedDate.includes("T")) {
-          selectedDate += "T09:00:00";
-        }
+    if (info.start instanceof Date) {
+      selectedDate = info.start.toISOString();
+    } else if (typeof info.startStr === "string") {
+      selectedDate = info.startStr.includes("T")
+        ? info.startStr
+        : info.startStr + "T09:00:00";
+    }
 
-        const parsed = new Date(selectedDate);
-        if (!isNaN(parsed)) {
-          openGoalModalWithDate(parsed.toISOString());
-        } else {
-          console.error("⛔ Invalid select date:", selectedDate);
-        }
-      }
+    if (selectedDate) {
+      openGoalModalWithDate(selectedDate);
+    } else {
+      console.error("⚠️ Не удалось определить диапазон:", info);
+    }
+  }
 
-      setTimeout(() => isCreatingGoal = false, 800);
-    },
+  setTimeout(() => isCreatingGoal = false, 800);
+},
 
     // === клик по событию ===
     eventClick: function(info) {
