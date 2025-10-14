@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // === клики по дате и диапазону ===
 dateClick: function(info) {
+  console.log("✅ Клик по календарю:", info);
   if (isCreatingGoal) return;
   isCreatingGoal = true;
 
@@ -141,3 +142,5 @@ select: function(info) {
   calendar.render();
   window.calendar = calendar;
 });
+
+console.log("✅ fullcalendar_init.js обновлён — версия 14.10.2025");
