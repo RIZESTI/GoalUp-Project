@@ -186,23 +186,41 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // === Открытие модалки по дате (из календаря) ===
-  window.openGoalModalWithDate = function(dateStr) {
-    form.reset();
-    goalIdInput.value = "";
-    if (deleteBtn) deleteBtn.style.display = "none";
+window.openGoalModalWithDate = function(dateStr) {
+  form.reset();
+  goalIdInput.value = "";
+  if (deleteBtn) deleteBtn.style.display = "none";
 
-    const dateObj = new Date(dateStr);
-    dateInput.value = dateObj.toISOString().split('T')[0];
-    timeInput.value = dateObj.toTimeString().slice(0, 5);
+  // 🛡️ защита от битой даты
+  let safeDateStr = dateStr;
+  if (!safeDateStr || typeof safeDateStr !== "string") {
+    console.warn("⚠️ Некорректная дата передана:", dateStr);
+    const now = new Date();
+    safeDateStr = now.toISOString();
+  }
 
-    ensureCompletedOption(false);
-    if (statusSelect) statusSelect.value = "default";
+  // добавляем время, если не указано
+  if (!safeDateStr.includes("T")) {
+    safeDateStr += "T09:00:00";
+  }
 
-    const titleEl = modal.querySelector('h2');
-    if (titleEl) titleEl.textContent = "Новая цель";
-    openMainModal();
-  };
+  const dateObj = new Date(safeDateStr);
+  if (isNaN(dateObj.getTime())) {
+    console.error("⛔ Ошибка парсинга даты:", safeDateStr);
+    return showToast("Ошибка: некорректная дата", "error");
+  }
 
+  // записываем значения в поля
+  dateInput.value = dateObj.toISOString().split('T')[0];
+  timeInput.value = dateObj.toTimeString().slice(0, 5);
+
+  ensureCompletedOption(false);
+  if (statusSelect) statusSelect.value = "default";
+
+  const titleEl = modal.querySelector('h2');
+  if (titleEl) titleEl.textContent = "Новая цель";
+  openMainModal();
+};
   // === Открытие для редактирования ===
   window.openGoalModalForEdit = function(goal) {
     form.reset();
