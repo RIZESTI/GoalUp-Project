@@ -71,27 +71,31 @@ document.addEventListener('DOMContentLoaded', function() {
     },
 
     // === клики по дате и диапазону ===
-    dateClick: function(info) {
-      if (isCreatingGoal) return; // 🚫 предотвращает дубль
-      isCreatingGoal = true;
+dateClick: function(info) {
+  if (isCreatingGoal) return; // 🚫 предотвращает дубль
+  isCreatingGoal = true;
 
-      if (typeof openGoalModalWithDate === "function") {
-        openGoalModalWithDate(info.dateStr + "T09:00:00");
-      }
+  if (typeof openGoalModalWithDate === "function") {
+    // ✅ формируем гарантированно корректную ISO-дату
+    const iso = new Date(info.dateStr + "T09:00:00").toISOString();
+    openGoalModalWithDate(iso);
+  }
 
-      setTimeout(() => isCreatingGoal = false, 1000);
-    },
+  setTimeout(() => isCreatingGoal = false, 1000);
+},
 
-    select: function(info) {
-      if (isCreatingGoal) return; // 🚫 предотвращает дубль
-      isCreatingGoal = true;
+select: function(info) {
+  if (isCreatingGoal) return; // 🚫 предотвращает дубль
+  isCreatingGoal = true;
 
-      if (typeof openGoalModalWithDate === "function") {
-        openGoalModalWithDate(info.dateStr + "T09:00:00");
-      }
+  if (typeof openGoalModalWithDate === "function") {
+    // ✅ если startStr отсутствует, используем info.start
+    const iso = new Date(info.startStr || info.start).toISOString();
+    openGoalModalWithDate(iso);
+  }
 
-      setTimeout(() => isCreatingGoal = false, 1000);
-    },
+  setTimeout(() => isCreatingGoal = false, 1000);
+},
 
     eventClick: function(info) {
       if (typeof openGoalModalForEdit === "function") {
