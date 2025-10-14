@@ -3,7 +3,8 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Q
-from datetime import datetime
+from datetime import datetime, timedelta
+from django.utils import timezone
 
 from .models import Goal
 
@@ -87,6 +88,18 @@ def add_goal(request):
             dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M")
         except ValueError:
             return JsonResponse({"status": "error", "message": "Неверный формат даты/времени"}, status=400)
+
+        # ✅ Проверка: защита от повторных запросов (если пользователь жмёт дважды)
+        time_threshold = timezone.now() - timedelta(seconds=2)
+        duplicate_recent = Goal.objects.filter(
+            user=request.user,
+            title=title,
+            datetime=dt,
+            created_at__gte=time_threshold
+        ).exists()
+
+        if duplicate_recent:
+            return JsonResponse({"status": "duplicate", "message": "Повторное нажатие проигнорировано"})
 
         # ✅ Проверка: если цель с тем же названием и временем уже есть — не дублировать
         duplicate = Goal.objects.filter(
