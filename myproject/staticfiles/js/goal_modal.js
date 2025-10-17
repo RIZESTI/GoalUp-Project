@@ -1,8 +1,24 @@
 document.addEventListener('DOMContentLoaded', () => {
+  // === Fallback для страниц без модалки (профиль, редактирование и т.п.) ===
   const modal = document.getElementById('goalModal');
-  const openBtn = document.getElementById('openGoalModal');
-  const closeBtn = document.getElementById('closeGoalModal');
   const form = document.getElementById('goalForm');
+  const triggers = document.querySelectorAll('.open-goal-modal, #open-goal-modal, #openGoalModal');
+
+  const openOnHome = (e) => {
+    if (e) e.preventDefault();
+    const base = (window.GOALUP_HOME_URL || '/');
+    window.location.href = base + (base.includes('?') ? '&' : '?') + 'new=1';
+  };
+
+  if (!modal || !form) {
+    // если модалки нет — просто редиректим
+    triggers.forEach(btn => btn && btn.addEventListener('click', openOnHome));
+    return;
+  }
+
+  // === Дальше идёт твой основной код ===
+
+  const closeBtn = document.getElementById('closeGoalModal');
   const dateInput = document.getElementById('goalDate');
   const timeInput = document.getElementById('goalTime');
   const goalIdInput = document.getElementById('goalId');
@@ -16,13 +32,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const cancelDeleteBtn = document.getElementById('cancelDelete');
   let goalToDelete = null;
 
-  function buildUrl(pattern, id) { return pattern.replace(/0\/?$/, String(id) + "/"); }
-  function openMainModal() { modal.classList.remove('hidden'); if (titleInput) setTimeout(() => titleInput.focus(), 30); }
-  function closeMainModal() { modal.classList.add('hidden'); }
-  function openDeleteModal() { deleteModal.classList.remove('hidden'); }
-  function closeDeleteModal() { deleteModal.classList.add('hidden'); }
+  function buildUrl(pattern, id) {
+    return pattern.replace(/0\/?$/, String(id) + "/");
+  }
 
-  // управляем "Выполнена"
+  function openMainModal() {
+    modal.classList.remove('hidden');
+    if (titleInput) setTimeout(() => titleInput.focus(), 30);
+  }
+
+  function closeMainModal() {
+    modal.classList.add('hidden');
+  }
+
+  function openDeleteModal() {
+    deleteModal.classList.remove('hidden');
+  }
+
+  function closeDeleteModal() {
+    deleteModal.classList.add('hidden');
+  }
+
+  // === Управление статусом "Выполнена" ===
   function ensureCompletedOption(allow, valueToSet) {
     if (!statusSelect) return;
     let completed = statusSelect.querySelector('option[value="completed"]');
@@ -40,9 +71,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // кнопка "Добавить цель"
-  if (openBtn) {
-    openBtn.addEventListener('click', () => {
+  // === Несколько кнопок "Добавить цель" ===
+  document.querySelectorAll('.open-goal-modal').forEach(btn => {
+    btn.addEventListener('click', () => {
       form.reset();
       goalIdInput.value = "";
       if (deleteBtn) deleteBtn.style.display = "none";
@@ -52,26 +83,37 @@ document.addEventListener('DOMContentLoaded', () => {
       if (statusSelect) statusSelect.value = "default";
       openMainModal();
     });
-  }
+  });
 
-  // закрытие
-  if (closeBtn) closeBtn.addEventListener('click', () => { closeMainModal(); cleanupQuery(); });
+  // === Закрытие модалок ===
+  if (closeBtn)
+    closeBtn.addEventListener('click', () => {
+      closeMainModal();
+      cleanupQuery();
+    });
+
   window.addEventListener('click', (e) => {
-    if (e.target === modal) { closeMainModal(); cleanupQuery(); }
+    if (e.target === modal) {
+      closeMainModal();
+      cleanupQuery();
+    }
     if (e.target === deleteModal) closeDeleteModal();
   });
+
   document.addEventListener('keydown', (e) => {
     if (e.key === "Escape") {
-      if (!modal.classList.contains("hidden")) { closeMainModal(); cleanupQuery(); }
+      if (!modal.classList.contains("hidden")) {
+        closeMainModal();
+        cleanupQuery();
+      }
       if (!deleteModal.classList.contains("hidden")) closeDeleteModal();
     }
   });
 
-  // сохранение
+  // === Сохранение цели ===
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const formData = new FormData(form);
-
     let url = window.goalUrls.add;
     let successMsg = "Цель сохранена!";
     if (goalIdInput.value) {
@@ -86,17 +128,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     if (response.ok) {
-      closeMainModal(); form.reset();
+      closeMainModal();
+      form.reset();
       showToast(successMsg, "success");
       window.location.reload();
     } else {
       let msg = "Ошибка при сохранении цели";
-      try { const data = await response.json(); if (data.message) msg = data.message; } catch {}
+      try {
+        const data = await response.json();
+        if (data.message) msg = data.message;
+      } catch {}
       showToast(msg, "error");
     }
   });
 
-  // удаление
+  // === Удаление ===
   if (deleteBtn) {
     deleteBtn.addEventListener('click', () => {
       const id = goalIdInput.value;
@@ -105,7 +151,12 @@ document.addEventListener('DOMContentLoaded', () => {
       openDeleteModal();
     });
   }
-  if (cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', () => { goalToDelete = null; closeDeleteModal(); });
+
+  if (cancelDeleteBtn)
+    cancelDeleteBtn.addEventListener('click', () => {
+      goalToDelete = null;
+      closeDeleteModal();
+    });
 
   if (confirmDeleteBtn) {
     confirmDeleteBtn.addEventListener('click', async () => {
@@ -117,37 +168,61 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       if (response.ok) {
-        closeMainModal(); form.reset();
+        closeMainModal();
+        form.reset();
         showToast("Цель удалена!", "warning");
         window.location.reload();
       } else {
         let msg = "Ошибка при удалении цели";
-        try { const data = await response.json(); if (data.message) msg = data.message; } catch {}
+        try {
+          const data = await response.json();
+          if (data.message) msg = data.message;
+        } catch {}
         showToast(msg, "error");
       }
-      closeDeleteModal(); goalToDelete = null;
+      closeDeleteModal();
+      goalToDelete = null;
     });
   }
 
-  // открыть модалку с датой
-  window.openGoalModalWithDate = function(dateStr) {
-    form.reset();
-    goalIdInput.value = "";
-    if (deleteBtn) deleteBtn.style.display = "none";
+  // === Открытие модалки по дате (из календаря) ===
+window.openGoalModalWithDate = function(dateStr) {
+  console.log("🟣 openGoalModalWithDate вызвана с датой:", dateStr);
+  form.reset();
+  goalIdInput.value = "";
+  if (deleteBtn) deleteBtn.style.display = "none";
 
-    const dateObj = new Date(dateStr);
-    dateInput.value = dateObj.toISOString().split('T')[0];
-    timeInput.value = dateObj.toTimeString().slice(0,5);
+  // 🛡️ защита от битой даты
+  let safeDateStr = dateStr;
+  if (!safeDateStr || typeof safeDateStr !== "string") {
+    console.warn("⚠️ Некорректная дата передана:", dateStr);
+    const now = new Date();
+    safeDateStr = now.toISOString();
+  }
 
-    ensureCompletedOption(false);
-    if (statusSelect) statusSelect.value = "default";
+  // добавляем время, если не указано
+  if (!safeDateStr.includes("T")) {
+    safeDateStr += "T09:00:00";
+  }
 
-    const titleEl = modal.querySelector('h2');
-    if (titleEl) titleEl.textContent = "Новая цель";
-    openMainModal();
-  };
+  const dateObj = new Date(safeDateStr);
+  if (isNaN(dateObj.getTime())) {
+    console.error("⛔ Ошибка парсинга даты:", safeDateStr);
+    return showToast("Ошибка: некорректная дата", "error");
+  }
 
-  // открыть для редактирования
+  // записываем значения в поля
+  dateInput.value = dateObj.toISOString().split('T')[0];
+  timeInput.value = dateObj.toTimeString().slice(0, 5);
+
+  ensureCompletedOption(false);
+  if (statusSelect) statusSelect.value = "default";
+
+  const titleEl = modal.querySelector('h2');
+  if (titleEl) titleEl.textContent = "Новая цель";
+  openMainModal();
+};
+  // === Открытие для редактирования ===
   window.openGoalModalForEdit = function(goal) {
     form.reset();
     goalIdInput.value = goal.id;
@@ -157,10 +232,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (goal.start) {
       const dateObj = new Date(goal.start);
       dateInput.value = dateObj.toISOString().split('T')[0];
-      timeInput.value = dateObj.toTimeString().slice(0,5);
+      timeInput.value = dateObj.toTimeString().slice(0, 5);
     }
 
-    ensureCompletedOption(true, (goal.status || "default"));
+    ensureCompletedOption(true, goal.status || "default");
 
     if (deleteBtn) deleteBtn.style.display = "inline-block";
     const titleEl = modal.querySelector('h2');
@@ -168,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
     openMainModal();
   };
 
-  // открыть по query
+  // === Поддержка query (?new=1, ?edit=ID) ===
   const params = new URLSearchParams(window.location.search);
   if (params.get("new") === "1") {
     form.reset();
@@ -197,16 +272,18 @@ document.addEventListener('DOMContentLoaded', () => {
       dateInput.value = `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`;
       timeInput.value = `${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
 
-      ensureCompletedOption(true, (g.status || "default"));
+      ensureCompletedOption(true, g.status || "default");
 
       if (deleteBtn) deleteBtn.style.display = "inline-block";
       const titleEl = modal.querySelector('h2');
       if (titleEl) titleEl.textContent = "Редактировать цель";
       openMainModal();
-    } catch (e) { console.error(e); }
+    } catch (e) {
+      console.error(e);
+    }
   }
 
-  // делегирование: боковушка
+  // === Делегирование (боковая панель) ===
   const sidebar = document.querySelector(".goals-block");
   if (sidebar) {
     sidebar.addEventListener("click", (e) => {
@@ -216,7 +293,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (e.target.closest(".goal-action.danger")) {
         const id = e.target.closest(".goal-action.danger").dataset.id;
-        if (id) { goalToDelete = id; openDeleteModal(); }
+        if (id) {
+          goalToDelete = id;
+          openDeleteModal();
+        }
       }
       if (e.target.closest(".goal-action.complete")) {
         const id = e.target.closest(".goal-action.complete").dataset.id;
@@ -225,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // делегирование: таблица
+  // === Делегирование (таблица целей) ===
   const goalsPage = document.querySelector(".goals-page");
   if (goalsPage) {
     goalsPage.addEventListener("click", (e) => {
@@ -235,7 +315,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (e.target.closest(".goal-action.danger")) {
         const id = e.target.closest(".goal-action.danger").dataset.id;
-        if (id) { goalToDelete = id; openDeleteModal(); }
+        if (id) {
+          goalToDelete = id;
+          openDeleteModal();
+        }
       }
       if (e.target.closest(".goal-action.complete")) {
         const id = e.target.closest(".goal-action.complete").dataset.id;
@@ -244,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // завершение
+  // === Завершение цели ===
   async function markGoalCompleted(goalId, rowEl) {
     try {
       const res = await fetch(`/goals/complete/${goalId}/`, {
@@ -255,17 +338,18 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data.status === "ok") {
         showToast("Цель выполнена!", "success");
 
-        // боковушка/таблица
         if (rowEl) {
           rowEl.classList.remove("default", "important");
           rowEl.classList.add("completed");
           const title = rowEl.querySelector(".goal-title") || rowEl.querySelector("td:first-child");
-          if (title) { title.style.color = "#9e9e9e"; title.style.textDecoration = "line-through"; }
+          if (title) {
+            title.style.color = "#9e9e9e";
+            title.style.textDecoration = "line-through";
+          }
           const completeBtn = rowEl.querySelector(".goal-action.complete");
           if (completeBtn) completeBtn.remove();
         }
 
-        // 🔥 обновляем календарь
         if (window.calendar) {
           const ev = window.calendar.getEventById(String(goalId));
           if (ev) {
@@ -284,7 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // чистим query
+  // === Очистка query ===
   function cleanupQuery() {
     if (window.history && window.history.replaceState) {
       const url = new URL(window.location.href);
@@ -293,4 +377,26 @@ document.addEventListener('DOMContentLoaded', () => {
       window.history.replaceState({}, "", url.toString());
     }
   }
+
+  // === Прелоадер для всех fetch-запросов ===
+  function showLoader() {
+    const overlay = document.getElementById('loader-overlay');
+    if (overlay) overlay.style.display = 'flex';
+  }
+
+  function hideLoader() {
+    const overlay = document.getElementById('loader-overlay');
+    if (overlay) overlay.style.display = 'none';
+  }
+
+  const originalFetch = window.fetch;
+  window.fetch = async (...args) => {
+    try {
+      showLoader();
+      const response = await originalFetch(...args);
+      return response;
+    } finally {
+      hideLoader();
+    }
+  };
 });
