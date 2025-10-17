@@ -17,6 +17,12 @@ ALLOWED_HOSTS = ["127.0.0.1", "localhost", "*"]
 
 APPEND_SLASH = True  # автодобавление / в конце URL
 
+# --- HTTPS и безопасность ---
+SECURE_SSL_REDIRECT = True          # перенаправление HTTP -> HTTPS
+SESSION_COOKIE_SECURE = True        # сессионные cookie только по HTTPS
+CSRF_COOKIE_SECURE = True           # защита CSRF-токена по HTTPS
+
+
 # ===============================
 # 📦 ПРИЛОЖЕНИЯ
 # ===============================
@@ -120,6 +126,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
 
 # ===============================
 # 🔑 АУТЕНТИФИКАЦИЯ
