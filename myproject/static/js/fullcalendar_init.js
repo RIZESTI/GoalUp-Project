@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     selectable: true,
     locale: 'ru',
     firstDay: 1,
+     timeZone: 'Asia/Almaty',
 
     headerToolbar: {
       left: 'prev,next today',
