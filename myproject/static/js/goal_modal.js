@@ -330,9 +330,12 @@ window.openGoalModalWithDate = function(dateStr) {
   // === Завершение цели ===
   async function markGoalCompleted(goalId, rowEl) {
     try {
-      const res = await fetch(`/goals/complete/${goalId}/`, {
+      const res = await fetch(`/goals/complete/${goalId}/update/`, {
         method: "POST",
-        headers: { "X-CSRFToken": form.querySelector("[name=csrfmiddlewaretoken]").value }
+        headers: { "X-CSRFToken": form.querySelector("[name=csrfmiddlewaretoken]").value,
+        "Content-Type": "application/json"
+      }, 
+      body: JSON.stringify({ status: "completed" })
       });
       const data = await res.json();
       if (data.status === "ok") {
