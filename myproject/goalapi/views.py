@@ -171,3 +171,23 @@ def user_detail(request, user_id):
         "date_joined": target_user.date_joined,
     }
     return Response(data, status=status.HTTP_200_OK)
+
+# ===============================
+# ✅ Завершение цели
+# ===============================
+
+@api_view(['POST'])
+@authentication_classes([MasterKeyAuth, SessionAuthentication])
+@permission_classes([IsAuthenticated])
+def complete_goal(request, goal_id):
+    """Пометить цель как выполненную"""
+    user = request.user
+
+    if user.is_superuser:
+        goal = get_object_or_404(Goal, id=goal_id)
+    else:
+        goal = get_object_or_404(Goal, id=goal_id, user=user)
+
+    goal.status = "completed"
+    goal.save()
+    return Response({"status": "ok"}, status=status.HTTP_200_OK)

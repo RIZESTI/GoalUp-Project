@@ -9,6 +9,7 @@ urlpatterns = [
     path('goals/<int:goal_id>/', views.goal_detail, name='api_goal_detail'),
     path('goals/<int:goal_id>/update/', views.update_goal, name='api_goal_update'),
     path('goals/<int:goal_id>/delete/', views.delete_goal, name='api_goal_delete'),
+    path('goals/<int:goal_id>/complete/', views.complete_goal, name='api_goal_complete'),
 
     # Админские маршруты
     path('all_goals/', views.all_goals, name='api_all_goals'),
