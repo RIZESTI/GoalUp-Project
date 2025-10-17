@@ -187,6 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // === Открытие модалки по дате (из календаря) ===
 window.openGoalModalWithDate = function(dateStr) {
+  console.log("🟣 openGoalModalWithDate вызвана с датой:", dateStr);
   form.reset();
   goalIdInput.value = "";
   if (deleteBtn) deleteBtn.style.display = "none";
