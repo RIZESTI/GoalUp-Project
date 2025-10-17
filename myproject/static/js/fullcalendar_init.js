@@ -82,9 +82,11 @@ dateClick: function(info) {
     let clickedDate;
 
     // 🧠 На ПК FullCalendar отдаёт info.date (Date), а на мобилке info.dateStr (string)
-    if (info.date instanceof Date) {
-      clickedDate = info.date.toISOString();
-    } else if (typeof info.dateStr === "string") {
+if (info.date instanceof Date) {
+  // Просто берём локальную дату без пересчёта в UTC
+  clickedDate = info.date.toLocaleString('sv-SE').replace(' ', 'T');
+}
+    else if (typeof info.dateStr === "string") {
       clickedDate = info.dateStr.includes("T")
         ? info.dateStr
         : info.dateStr + "T09:00:00";
@@ -107,9 +109,10 @@ select: function(info) {
   if (typeof openGoalModalWithDate === "function") {
     let selectedDate;
 
-    if (info.start instanceof Date) {
-      selectedDate = info.start.toISOString();
-    } else if (typeof info.startStr === "string") {
+  if (info.start instanceof Date) {
+  selectedDate = info.start.toLocaleString('sv-SE').replace(' ', 'T');
+  }
+    else if (typeof info.startStr === "string") {
       selectedDate = info.startStr.includes("T")
         ? info.startStr
         : info.startStr + "T09:00:00";
